@@ -1,11 +1,8 @@
 ﻿hardly
-not very
-not really
-don’t
-don’t really
-wasn’t very
-wasn’t
 not
-isn’t
-is not
+isnt
+isn't
 barely
+wasn't
+wasnt
+fileend

@@ -8,6 +8,8 @@ bad
 boring
 broken
 cruel
+crap
+crappy
 damage
 damaged
 dead
@@ -41,7 +43,6 @@ missing
 poor
 sad
 smelly
-shit
 sticky
 stinky
 stupid
@@ -65,3 +66,4 @@ D:
 ]:
 >:[
 ]:<
+fileend
