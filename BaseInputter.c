@@ -1,8 +1,20 @@
 #include <stdio.h>
-#define positivethreshhold 3
+#include <string.h>
 
 void clearInput(char *input) {
 	input[0] = '\0';
+}
+const char * expertsys_rating(float expert_rating){
+	if (expert_rating >= 0.8f)
+		return "Certainly Positive";
+	else if (expert_rating >= 0.6f)
+		return "Mostly Positive";
+	else if (expert_rating >= 0.4f)
+		return "Essentially Indifferent or Unable to Determine";
+	else if (expert_rating >= 0.2f)
+		return "Mostly Negative";
+	else
+		return "Certainly Negative";
 }
 
 int main() {
@@ -14,14 +26,26 @@ int main() {
 	FILE *fn= fopen("review_output.txt", "w");
 	if (fn == NULL) {
 		printf("Error opening output file!\n");
-		exit(1);
+		return 1;
 	}
+	// ----- RATING WEIGHTS ----- //
+	float amp_pos = 1.5f;
+	float amp_neg = -0.5f;
+	float pos = 1.0f;
+	float neg = 0.0f;
+	
+
 
 	int rating =  0;
 	float weighted_rating = 0.0f;
+	float expert_rating = 0.0f;
 	int positivecount = 0;
 	int negativecount = 0;
 	int keywordcount = 0;
+	int correct = 0;
+	int incorrect = 0;
+	int undetermined = 0;
+
 	char Name[50] = { "" };
 	char input[8000]= {""};
 	char rev[10090] = { "" };
@@ -78,7 +102,8 @@ int main() {
 	//Cycle through words in review input file
 	do {
 		rev[0] = '\0';
-		positivecount = negativecount = keywordcount = 0;
+
+		positivecount = negativecount = keywordcount = expert_rating = weighted_rating =0.0f;
 		clearInput(input);
 		fscanf(reviewfile, "%s", &input);
 		//printf("input: %s |", input);
@@ -88,9 +113,13 @@ int main() {
 		}
 		else if (strstr(input, "review")!=NULL) {
 			fscanf(reviewfile, "%s", &input);
+
 			while (strstr(input, "overallrating") == NULL) {
+				_strlwr(input);
 				strcat(input, " ");
 				//printf("r:%s|", input);
+
+				//Negated Words
 				if (strstr(keywords_negating, input) != NULL) {
 					//printf("Negating with %s", input);
 					strcat(rev, input);
@@ -99,36 +128,83 @@ int main() {
 					if (strstr(keywords_negative, input) != NULL) {
 						++positivecount;
 						++keywordcount;
+						weighted_rating += pos;
 						//printf(" negative of %s", input);
 					}
 					else if (strstr(keywords_positive, input) != NULL) {
 						++negativecount;
 						++keywordcount;
+						weighted_rating += neg;
 						//printf(" positive of %s", input);
 					}
 				}
+
+				// Amplified Words
+				else if (strstr(keywords_amplifier, input) != NULL) {
+					//printf("Amped with %s", input);
+					strcat(rev, input);
+					fscanf(reviewfile, "%s", &input);
+					strcat(input, " ");
+					if (strstr(keywords_negative, input) != NULL) {
+						//printf("neg of %s", input);
+						++negativecount;
+						++keywordcount;
+						weighted_rating += amp_neg;
+					}
+					else if (strstr(keywords_positive, input) != NULL) {
+						//printf("pos of %s", input);
+						++positivecount;
+						++keywordcount;
+						weighted_rating += amp_pos;
+					}
+				}
+
+				// Standard Words
 				else if (strstr(keywords_positive, input) != NULL) {
 					//printf("Positive with %s", input);
 					++positivecount;
 					++keywordcount;
+					weighted_rating += pos;
 				}
 				else if (strstr(keywords_negative, input) != NULL) {
 					//printf("Negative with %s", input);
 					++negativecount;
 					++keywordcount;
+					weighted_rating += neg;
 				}
 					strcat(rev, input);
 					fscanf(reviewfile, "%s", &input);
 			}
+
 			//printf("text: %s", rev);
-		}if (strstr(input, "overallrating")!=NULL) {
+		}if (strstr(input, "overallrating") != NULL) {
 			fscanf(reviewfile, "%d", &rating);
+			expert_rating = weighted_rating / (float)keywordcount;
+			if (keywordcount == 0) {
+				expert_rating = 0.5f;
+			}
+			if ((rating >= 3 && expert_rating > 0.50f) || (rating <= 2 && expert_rating < 0.50f)) {
+				++correct;
+			}
+			else if (expert_rating == 0.50f) {
+				++undetermined;
+			}
+			else {
+				++incorrect;
+			}
+
 			//printf("or: %d |", rating);
-			printf("Name: %s\nReview: %s\nRating: %d\nPositive(Rating 3 or above)? %s\nKeywords: %d, Positive-Negative: %d-%d\n\n", Name, rev, rating, (rating >= positivethreshhold) ? "Yes" : "No", keywordcount, positivecount, negativecount);
-			fprintf(fn, "Name: %s\nReview: %s\nRating: %d\nPositive(Rating 3 or above)? %s\nKeywords: %d, Positive-Negative: %d-%d\n\n", Name, rev, rating, (rating >= positivethreshhold) ? "Yes" : "No", keywordcount, positivecount, negativecount);
+			//if (expert_rating == 0.50f) {
+			printf("Name: %s\nReview: %s\nRating: %d\nKeywords: %d, Positive-Negative: %d-%d\nComputed Rating:%f\n", Name, rev, rating, keywordcount, positivecount, negativecount, expert_rating);
+			printf("%s\n\n", expertsys_rating(expert_rating));
+			//}
+			fprintf(fn, "Name: %s\nReview: %s\nRating: %d\nKeywords: %d, Positive-Negative: %d-%d\nComputed Rating:%f\n\n", Name, rev, rating, keywordcount, positivecount, negativecount,expert_rating);
 		}
 		
 	} while (strstr(input, "fileend")==NULL);
+	printf("\n\nCorrect for positive, 3 stars: %d, Incorrect: %d. Accuracy: %f\n Undetermined: %d. Total: %d", correct, incorrect,(float)correct/(float)(incorrect+correct+undetermined), undetermined, undetermined+correct+incorrect);
+	fprintf(fn, "\n\nCorrect for positive, 3 stars: %d, Incorrect: %d. Accuracy: %f\n Undetermined: %d. Total: %d", correct, incorrect, (float)correct / (float)(incorrect + correct + undetermined), undetermined, undetermined + correct + incorrect);
+
 	char ch = getchar();
 	fclose(fn);
 	fclose(reviewfile);
