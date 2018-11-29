@@ -1,6 +1,18 @@
 #include <stdio.h>
 #include <string.h>
+#include<ctype.h>
 
+char *stringlwr(char *str)
+{
+	unsigned char *p = (unsigned char *)str;
+
+	while (*p) {
+		*p = tolower((unsigned char)*p);
+		p++;
+	}
+
+	return str;
+}
 void clearInput(char *input) {
 	input[0] = '\0';
 }
@@ -23,7 +35,7 @@ int main() {
 	FILE *kwNegatingFile = fopen("Keywords/Negating_Keywords.txt", "r");
 	FILE *kwNegativeFile = fopen("Keywords/Negative_Keywords.txt", "r");
 	FILE *kwPosFile = fopen("Keywords/Positive_Keywords.txt", "r");
-	FILE *fn= fopen("review_output.txt", "w");
+	FILE *fn= fopen("review_output_svm.txt", "w");
 	if (fn == NULL) {
 		printf("Error opening output file!\n");
 		return 1;
@@ -115,7 +127,7 @@ int main() {
 			fscanf(reviewfile, "%s", &input);
 
 			while (strstr(input, "overallrating") == NULL) {
-				_strlwr(input);
+				stringlwr(input);
 				strcat(input, " ");
 				//printf("r:%s|", input);
 
@@ -198,12 +210,16 @@ int main() {
 			printf("Name: %s\nReview: %s\nRating: %d\nKeywords: %d, Positive-Negative: %d-%d\nComputed Rating:%f\n", Name, rev, rating, keywordcount, positivecount, negativecount, expert_rating);
 			printf("%s\n\n", expertsys_rating(expert_rating));
 			//}
+			//-----FOR EXPERT OUTPUT-----//
 			fprintf(fn, "Name: %s\nReview: %s\nRating: %d\nKeywords: %d, Positive-Negative: %d-%d\nComputed Rating:%f\n\n", Name, rev, rating, keywordcount, positivecount, negativecount,expert_rating);
+
+			//-----FOR SVM PARSE-----//
+			//fprintf(fn, "%d\n%s\nend\n", rating, rev);
 		}
 		
 	} while (strstr(input, "fileend")==NULL);
 	printf("\n\nCorrect for positive, 3 stars: %d, Incorrect: %d. Accuracy: %f\n Undetermined: %d. Total: %d", correct, incorrect,(float)correct/(float)(incorrect+correct+undetermined), undetermined, undetermined+correct+incorrect);
-	fprintf(fn, "\n\nCorrect for positive, 3 stars: %d, Incorrect: %d. Accuracy: %f\n Undetermined: %d. Total: %d", correct, incorrect, (float)correct / (float)(incorrect + correct + undetermined), undetermined, undetermined + correct + incorrect);
+	//fprintf(fn, "\n\nCorrect for positive, 3 stars: %d, Incorrect: %d. Accuracy: %f\n Undetermined: %d. Total: %d", correct, incorrect, (float)correct / (float)(incorrect + correct + undetermined), undetermined, undetermined + correct + incorrect);
 
 	char ch = getchar();
 	fclose(fn);
