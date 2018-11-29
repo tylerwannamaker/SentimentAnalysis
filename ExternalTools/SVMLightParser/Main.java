@@ -18,7 +18,7 @@ public class Main {
       int wordscount[] = new int[99999];
       int reviewnum=0;
       List<String> words= new ArrayList<String>();
-        String[] arr;
+      String[] arr;
       int step=0;
       final int minPosStars = 3;
       final int maxNegStars = 2;
@@ -49,12 +49,13 @@ public class Main {
 
                     for(int index = 0; index<wordscount.length;index++){
                         if(wordscount[index]>0){
-                            //System.out.println("Index: "+index+" wordscount[index]: "+wordscount[index]+" length: "+arr.length);
-                            reviewOutput+=(index + ":"+(((float)wordscount[index])/(float)arr.length)+" ");
+
+                            reviewOutput+=((index+1) + ":"+(((float)wordscount[index])/(float)arr.length)+" ");
+
                         }
 
             }
-
+          System.out.println(reviewOutput);
           bw.write(reviewOutput);
           bw.newLine();
       }
