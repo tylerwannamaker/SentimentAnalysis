@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include<ctype.h>
-#include <pthread.h>
+
 char *stringlwr(char *str)
 {
 	unsigned char *p = (unsigned char *)str;
@@ -29,43 +29,25 @@ const char * expertsys_rating(float expert_rating){
 		return "Certainly Negative";
 }
 
-void *theThread(int threadNum) {
-	printf("\nThread %d started", threadNum);
-	FILE *reviewfile = fopen("review_input_0.txt", "r");
-	FILE *fn = fopen("review_output_svm.txt","w");
-
-		switch(threadNum){
-		case 0:
-		fn = fopen("rev_0.txt", "w");
-		reviewfile = fopen("review_input_0.txt", "r");
-		break;
-		case 1:
-		fn = fopen("rev_1.txt", "w");
-		reviewfile = fopen("review_input_1.txt","r");
-		break;
-		case 2:
-		fn = fopen("rev_2.txt","w");
-		reviewfile = fopen("review_input_2.txt", "r");
-		break;
-		case 3:
-		fn=fopen("rev_3.txt","w");
-		reviewfile = fopen("review_input_3.txt","r");
-		
-	}
-
+int main() {
+	FILE *reviewfile = fopen("review_fixed.txt", "r");
 	FILE *kwAmpFile = fopen("Keywords/Amplifier_Keywords.txt", "r");
 	FILE *kwNegatingFile = fopen("Keywords/Negating_Keywords.txt", "r");
 	FILE *kwNegativeFile = fopen("Keywords/Negative_Keywords.txt", "r");
 	FILE *kwPosFile = fopen("Keywords/Positive_Keywords.txt", "r");
-	
-	
+	FILE *fn= fopen("review_output_svm.txt", "w");
+	if (fn == NULL) {
+		printf("Error opening output file!\n");
+		return 1;
+	}
+	//FILE *ff = fopen("review_fixed.txt", "w");
 	// ----- RATING WEIGHTS ----- //
 	float amp_pos = 1.5f;
 	float amp_neg = -0.5f;
 	float pos = 1.0f;
 	float neg = 0.0f;
 	
-
+	//int numPos = 0, numNeg = 0, numNeut=0,numRev = 400;
 
 	int rating =  0;
 	float weighted_rating = 0.0f;
@@ -77,9 +59,10 @@ void *theThread(int threadNum) {
 	int incorrect = 0;
 	int undetermined = 0;
 
+	char temp[50] = { "" };
 	char Name[50] = { "" };
 	char input[8000]= {""};
-	char rev[10090] = { "" };
+	char rev[11000] = { "" };
 
 	char keywords_amplifier[2000] = { "" };
 	char keywords_negating[2000] = { "" };
@@ -89,6 +72,7 @@ void *theThread(int threadNum) {
 
 	fscanf(kwAmpFile, "%s", &input);
 	do {
+		strcat(keywords_amplifier, ".");
 		strcat(keywords_amplifier, input);
 		strcat(keywords_amplifier, " ");
 		clearInput(input);
@@ -100,6 +84,7 @@ void *theThread(int threadNum) {
 	
 	fscanf(kwNegatingFile, "%s", &input);
 	do {
+		strcat(keywords_negating, ".");
 		strcat(keywords_negating, input);
 		strcat(keywords_negating, " ");
 		clearInput(input);
@@ -111,6 +96,7 @@ void *theThread(int threadNum) {
 
 	fscanf(kwNegativeFile, "%s", &input);
 	do {
+		strcat(keywords_negative, ".");
 		strcat(keywords_negative, input);
 		strcat(keywords_negative, " ");
 		clearInput(input);
@@ -122,6 +108,7 @@ void *theThread(int threadNum) {
 
 	fscanf(kwPosFile, "%s", &input);
 	do {
+		strcat(keywords_positive, ".");
 		strcat(keywords_positive, input);
 		strcat(keywords_positive, " ");
 		clearInput(input);
@@ -148,11 +135,14 @@ void *theThread(int threadNum) {
 			while (strstr(input, "overallrating") == NULL) {
 				stringlwr(input);
 				strcat(input, " ");
+				strcpy(temp, input);
+				strcpy(input, ".");
+				strcat(input, temp);
 				//printf("r:%s|", input);
 
 				//Negated Words
 				if (strstr(keywords_negating, input) != NULL) {
-					//printf("Negating with %s", input);
+					printf("Negating with %s", input);
 					strcat(rev, input);
 					fscanf(reviewfile, "%s", &input);
 					strcat(input, " ");
@@ -160,30 +150,30 @@ void *theThread(int threadNum) {
 						++positivecount;
 						++keywordcount;
 						weighted_rating += pos;
-						//printf(" negative of %s", input);
+						printf("\n negative of %s\n", input);
 					}
 					else if (strstr(keywords_positive, input) != NULL) {
 						++negativecount;
 						++keywordcount;
 						weighted_rating += neg;
-						//printf(" positive of %s", input);
+						printf("\n positive of %s\n", input);
 					}
 				}
 
 				// Amplified Words
 				else if (strstr(keywords_amplifier, input) != NULL) {
-					//printf("Amped with %s", input);
+					printf("Amped with %s", input);
 					strcat(rev, input);
 					fscanf(reviewfile, "%s", &input);
 					strcat(input, " ");
 					if (strstr(keywords_negative, input) != NULL) {
-						//printf("neg of %s", input);
+						printf("\nneg of %s\n", input);
 						++negativecount;
 						++keywordcount;
 						weighted_rating += amp_neg;
 					}
 					else if (strstr(keywords_positive, input) != NULL) {
-						//printf("pos of %s", input);
+						printf("\npos of %s\n", input);
 						++positivecount;
 						++keywordcount;
 						weighted_rating += amp_pos;
@@ -192,13 +182,13 @@ void *theThread(int threadNum) {
 
 				// Standard Words
 				else if (strstr(keywords_positive, input) != NULL) {
-					//printf("Positive with %s", input);
+					printf("\nPositive with %s\n", input);
 					++positivecount;
 					++keywordcount;
 					weighted_rating += pos;
 				}
 				else if (strstr(keywords_negative, input) != NULL) {
-					//printf("Negative with %s", input);
+					printf("\nNegative with %s\n", input);
 					++negativecount;
 					++keywordcount;
 					weighted_rating += neg;
@@ -214,7 +204,7 @@ void *theThread(int threadNum) {
 			if (keywordcount == 0) {
 				expert_rating = 0.5f;
 			}
-			if ((rating >= 3 && expert_rating > 0.50f) || (rating <= 2 && expert_rating < 0.50f)) {
+			if ((rating > 3 && expert_rating > 0.50f) || (rating < 2 && expert_rating < 0.50f)) {
 				++correct;
 			}
 			else if (expert_rating == 0.50f) {
@@ -223,11 +213,26 @@ void *theThread(int threadNum) {
 			else {
 				++incorrect;
 			}
+			/*
+			if (rating > 3&&numPos<numRev) {
+				fprintf(ff,"name %s review %s overallrating %d lineend\n", Name, rev, rating);
+				++numPos;
+			}
+			else if (rating < 3 && numNeg < numRev) {
+				fprintf(ff, "name %s review %s overallrating %d lineend\n", Name, rev, rating);
+				++numNeg;
+			}
+			else if (rating == 3 && numNeut < 200) {
+				fprintf(ff, "name %s review %s overallrating %d lineend\n", Name, rev, rating);
+				++numNeut;
+			}
+			*/
+			
 
 			//printf("or: %d |", rating);
 			//if (expert_rating == 0.50f) {
-//			printf("Name: %s\nReview: %s\nRating: %d\nKeywords: %d, Positive-Negative: %d-%d\nComputed Rating:%f\n", Name, rev, rating, keywordcount, positivecount, negativecount, expert_rating);
-//			printf("%s\n\n", expertsys_rating(expert_rating));
+			printf("Name: %s\nReview: %s\nRating: %d\nKeywords: %d, Positive-Negative: %d-%d\nComputed Rating:%f\n", Name, rev, rating, keywordcount, positivecount, negativecount, expert_rating);
+			printf("%s\n\n", expertsys_rating(expert_rating));
 			//}
 			//-----FOR EXPERT OUTPUT-----//
 			fprintf(fn, "Name: %s\nReview: %s\nRating: %d\nKeywords: %d, Positive-Negative: %d-%d\nComputed Rating:%f\n\n", Name, rev, rating, keywordcount, positivecount, negativecount,expert_rating);
@@ -237,32 +242,14 @@ void *theThread(int threadNum) {
 		}
 		
 	} while (strstr(input, "fileend")==NULL);
-	printf("\n%d\nCorrect for positive, 3 stars: %d, Incorrect: %d. Accuracy: %f\n Undetermined: %d. Total: %d",threadNum, correct, incorrect,(float)correct/(float)(incorrect+correct+undetermined), undetermined, undetermined+correct+incorrect);
+	printf("\n\nCorrect for positive, 3 stars: %d, Incorrect: %d. Accuracy: %f\n Undetermined: %d. Total: %d", correct, incorrect,(float)correct/(float)(incorrect+correct+undetermined), undetermined, undetermined+correct+incorrect);
 	//fprintf(fn, "\n\nCorrect for positive, 3 stars: %d, Incorrect: %d. Accuracy: %f\n Undetermined: %d. Total: %d", correct, incorrect, (float)correct / (float)(incorrect + correct + undetermined), undetermined, undetermined + correct + incorrect);
 
+	char ch = getchar();
+
+	//fclose(ff);
 
 	fclose(fn);
 	fclose(reviewfile);
-	pthread_exit(NULL);	
+	return 0;
 }
-
-int main(){
-	int rc;
-	int t=0;
-	pthread_t thread_id[4];
-	for(t=0;t<4;t++){
-		printf("Creating thread %d", t);
-		rc=pthread_create(thread_id+t, NULL, theThread(t), (void *) t);
-		if(rc)
-		{
-			printf("ERROR: return ccode from pthread_create() is %d\n", rc);
-			exit(-1);
-		}
-	}
-for(t=0;t<4;t++){
-pthread_join(thread_id[t], NULL);
-}
-pthread_exit(NULL);
-return 0;
-}
-

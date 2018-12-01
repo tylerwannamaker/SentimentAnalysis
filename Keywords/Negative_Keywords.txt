@@ -7,7 +7,6 @@ annoying
 atrocious
 alarming
 bad
-the worst
 boring
 cruel
 crap
@@ -20,6 +19,8 @@ dirty
 dismal
 deformed
 deform
+defective
+defect
 downside
 disgusting
 disgust
@@ -34,7 +35,6 @@ filthy
 faulty
 gross
 garbage
-save your money
 hate
 hurt
 hideous
@@ -49,6 +49,7 @@ mean
 mess
 moldy
 missing
+mistake
 poor
 problem
 problems
