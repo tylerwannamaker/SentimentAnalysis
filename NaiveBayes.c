@@ -36,7 +36,7 @@ int main() {
 	FILE *kwNegatingFile = fopen("Keywords/Negating_Keywords.txt", "r");
 	FILE *kwNegativeFile = fopen("Keywords/Negative_Keywords.txt", "r");
 	FILE *kwPosFile = fopen("Keywords/Positive_Keywords.txt", "r");
-	FILE *fn= fopen("review_output_svm.txt", "w");
+	FILE *fn= fopen("review_output_NaiveBayes.txt", "w");
 	if (fn == NULL) {
 		printf("Error opening output file!\n");
 		return 1;
